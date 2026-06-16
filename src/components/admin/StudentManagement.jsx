@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Users, Plus, Trash2, Search, X, UserPlus, UserCircle2 } from 'lucide-react';
 import { getStudents, addStudent, deleteStudent } from '../../utils/storage';
+import { useToast } from '../../context/ToastContext';
+import ConfirmDialog from '../shared/ConfirmDialog';
 
 const emptyForm = { name: '', username: '', password: '', email: '', phone: '', subject: '' };
 
@@ -9,8 +11,9 @@ export default function StudentManagement() {
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [search, setSearch] = useState('');
+  const [confirm, setConfirm] = useState({ open: false, id: null, name: '' });
+  const toast = useToast();
 
   const load = () => setStudents(getStudents());
   useEffect(load, []);
@@ -21,18 +24,19 @@ export default function StudentManagement() {
     if (!form.name || !form.username || !form.password) { setError('Name, username and password are required.'); return; }
     if (getStudents().find(s => s.username === form.username.trim())) { setError('Username already exists.'); return; }
     addStudent({ ...form, username: form.username.trim() });
-    setSuccess('Student added successfully!');
     setForm(emptyForm);
     setShowModal(false);
     load();
-    setTimeout(() => setSuccess(''), 3000);
+    toast('Student added successfully!', 'success');
   };
 
-  const handleDelete = (id, name) => {
-    if (window.confirm(`Delete student "${name}"? This will also remove their fees and attendance.`)) {
-      deleteStudent(id);
-      load();
-    }
+  const handleDelete = (id, name) => setConfirm({ open: true, id, name });
+
+  const doDelete = () => {
+    deleteStudent(confirm.id);
+    load();
+    toast(`"${confirm.name}" deleted successfully.`, 'success');
+    setConfirm({ open: false, id: null, name: '' });
   };
 
   const filtered = students.filter(s =>
@@ -47,8 +51,6 @@ export default function StudentManagement() {
         <h1>Students</h1>
         <p>Add, view and manage all enrolled students.</p>
       </div>
-
-      {success && <div className="alert alert-success">{success}</div>}
 
       <div className="card">
         <div className="card-header">
@@ -106,6 +108,15 @@ export default function StudentManagement() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={confirm.open}
+        title="Delete Student?"
+        message={`Are you sure you want to delete "${confirm.name}"? This will also permanently remove their fees and attendance records.`}
+        confirmLabel="Yes, Delete"
+        onConfirm={doDelete}
+        onCancel={() => setConfirm({ open: false, id: null, name: '' })}
+      />
 
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>

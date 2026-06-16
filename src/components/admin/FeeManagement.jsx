@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Banknote, CheckCircle2, XCircle, Plus, Trash2, Filter } from 'lucide-react';
 import { getStudents, getFees, addOrUpdateFee, deleteFee, getUserById } from '../../utils/storage';
+import { useToast } from '../../context/ToastContext';
+import ConfirmDialog from '../shared/ConfirmDialog';
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const currentYear = new Date().getFullYear();
@@ -16,8 +18,9 @@ export default function FeeManagement() {
     studentId: '', month: MONTHS[new Date().getMonth()],
     year: currentYear, amount: '', status: 'unpaid'
   });
-  const [success, setSuccess] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [confirm, setConfirm] = useState({ open: false, id: null, label: '' });
+  const toast = useToast();
 
   const load = () => { setStudents(getStudents()); setFees(getFees()); };
   useEffect(load, []);
@@ -31,15 +34,26 @@ export default function FeeManagement() {
       status: form.status,
       paidDate: form.status === 'paid' ? new Date().toISOString().split('T')[0] : null,
     });
-    setSuccess('Fee record saved!');
     setForm({ studentId: '', month: MONTHS[new Date().getMonth()], year: currentYear, amount: '', status: 'unpaid' });
     setShowForm(false);
     load();
-    setTimeout(() => setSuccess(''), 3000);
+    toast('Fee record saved successfully!', 'success');
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('Delete this fee record?')) { deleteFee(id); load(); }
+  const handleDelete = (fee) => {
+    const student = getUserById(fee.studentId);
+    setConfirm({
+      open: true,
+      id: fee.id,
+      label: `${student?.name || 'Unknown'}'s ${fee.month} ${fee.year} fee record`,
+    });
+  };
+
+  const doDelete = () => {
+    deleteFee(confirm.id);
+    load();
+    toast('Fee record deleted.', 'success');
+    setConfirm({ open: false, id: null, label: '' });
   };
 
   const filtered = fees.filter(f => {
@@ -58,7 +72,14 @@ export default function FeeManagement() {
         <p>Track and manage student fee payments month-wise.</p>
       </div>
 
-      {success && <div className="alert alert-success">{success}</div>}
+      <ConfirmDialog
+        open={confirm.open}
+        title="Delete Fee Record?"
+        message={`Are you sure you want to delete ${confirm.label}? This action cannot be undone.`}
+        confirmLabel="Yes, Delete"
+        onConfirm={doDelete}
+        onCancel={() => setConfirm({ open: false, id: null, label: '' })}
+      />
 
       <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3,1fr)' }}>
         <div className="stat-card">
@@ -197,7 +218,7 @@ export default function FeeManagement() {
                       </td>
                       <td>{f.paidDate || '—'}</td>
                       <td>
-                        <button className="btn btn-danger btn-sm" onClick={() => handleDelete(f.id)}>
+                        <button className="btn btn-danger btn-sm" onClick={() => handleDelete(f)}>
                           <Trash2 size={13} strokeWidth={2} />
                         </button>
                       </td>
