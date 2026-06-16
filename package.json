@@ -4,10 +4,14 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "dev": "vite --mode development",
+    "dev:staging": "vite --mode staging",
+    "build": "vite build --mode production",
+    "build:staging": "vite build --mode staging",
+    "build:dev": "vite build --mode development",
+    "preview": "vite preview",
+    "preview:staging": "vite preview --mode staging",
+    "lint": "eslint ."
   },
   "dependencies": {
     "lucide-react": "^1.18.0",

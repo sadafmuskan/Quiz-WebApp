@@ -1,31 +1,51 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   LayoutDashboard, Users, Banknote, CalendarDays, ClipboardList,
   BookOpen, CalendarCheck, Receipt, LogOut, Menu, X, GraduationCap,
+  Megaphone, BookMarked, TrendingUp, Trophy, Bell,
 } from 'lucide-react';
+import FloatingBackground from './FloatingBackground';
+import { config } from '../../config/env';
+import { getUnreadNotifCount } from '../../utils/storage';
 
 const adminNav = [
-  { to: '/admin',            icon: LayoutDashboard, label: 'Dashboard',      end: true },
-  { to: '/admin/students',   icon: Users,           label: 'Students'              },
-  { to: '/admin/fees',       icon: Banknote,        label: 'Fee Management'        },
-  { to: '/admin/attendance', icon: CalendarDays,    label: 'Attendance'            },
-  { to: '/admin/quizzes',    icon: ClipboardList,   label: 'Quiz Management'       },
+  { to: '/admin',               icon: LayoutDashboard, label: 'Dashboard',      end: true },
+  { to: '/admin/students',      icon: Users,           label: 'Students'              },
+  { to: '/admin/fees',          icon: Banknote,        label: 'Fee Management'        },
+  { to: '/admin/attendance',    icon: CalendarDays,    label: 'Attendance'            },
+  { to: '/admin/quizzes',       icon: ClipboardList,   label: 'Quiz Management'       },
+  { to: '/admin/announcements', icon: Megaphone,       label: 'Announcements'         },
+  { to: '/admin/homework',      icon: BookMarked,      label: 'Homework'              },
 ];
 
 const studentNav = [
-  { to: '/student',            icon: LayoutDashboard, label: 'Dashboard',     end: true },
-  { to: '/student/fees',       icon: Receipt,         label: 'My Fees'              },
-  { to: '/student/attendance', icon: CalendarCheck,   label: 'My Attendance'        },
-  { to: '/student/quizzes',    icon: BookOpen,        label: 'My Quizzes'           },
+  { to: '/student',                icon: LayoutDashboard, label: 'Dashboard',     end: true },
+  { to: '/student/fees',           icon: Receipt,         label: 'My Fees'              },
+  { to: '/student/attendance',     icon: CalendarCheck,   label: 'My Attendance'        },
+  { to: '/student/quizzes',        icon: BookOpen,        label: 'My Quizzes'           },
+  { to: '/student/homework',       icon: BookMarked,      label: 'Homework'             },
+  { to: '/student/progress',       icon: TrendingUp,      label: 'Progress Report'      },
+  { to: '/student/leaderboard',    icon: Trophy,          label: 'Leaderboard'          },
+  { to: '/student/notifications',  icon: Bell,            label: 'Notifications', badge: true },
 ];
 
 export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [unread, setUnread] = useState(0);
   const navLinks = user?.role === 'admin' ? adminNav : studentNav;
+
+  useEffect(() => {
+    if (user?.role === 'student') {
+      const refresh = () => setUnread(getUnreadNotifCount(user.id));
+      refresh();
+      const id = setInterval(refresh, 10000);
+      return () => clearInterval(id);
+    }
+  }, [user]);
 
   const handleLogout = () => { logout(); navigate('/login'); };
   const close = () => setMobileOpen(false);
@@ -39,7 +59,7 @@ export default function Layout() {
           <div className="sidebar-logo-row">
             <h2>
               <GraduationCap size={20} strokeWidth={2.5} />
-              <span className="logo-text">EduApp</span>
+              <span className="logo-text">Learn & Grow</span>
             </h2>
             <button className="sidebar-close-btn" onClick={close}>
               <X size={18} />
@@ -53,6 +73,7 @@ export default function Layout() {
             <div className="nav-section-title">Menu</div>
             {navLinks.map(link => {
               const Icon = link.icon;
+              const showBadge = link.badge && unread > 0;
               return (
                 <NavLink
                   key={link.to}
@@ -61,7 +82,12 @@ export default function Layout() {
                   className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                   onClick={close}
                 >
-                  <span className="icon"><Icon size={18} strokeWidth={2} /></span>
+                  <span className="icon" style={{ position: 'relative' }}>
+                    <Icon size={18} strokeWidth={2} />
+                    {showBadge && (
+                      <span className="nav-badge">{unread > 9 ? '9+' : unread}</span>
+                    )}
+                  </span>
                   <span className="nav-label">{link.label}</span>
                 </NavLink>
               );
@@ -85,6 +111,7 @@ export default function Layout() {
       </aside>
 
       <main className="main-content">
+        <FloatingBackground fixed />
         <header className="mobile-header">
           <button className="hamburger-btn" onClick={() => setMobileOpen(true)} aria-label="Open menu">
             <Menu size={22} color="#5eead4" strokeWidth={2} />
@@ -100,6 +127,12 @@ export default function Layout() {
           <Outlet />
         </div>
       </main>
+
+      {config.showEnvBadge && (
+        <div className={`env-badge env-badge--${config.env}`}>
+          {config.env}
+        </div>
+      )}
     </div>
   );
 }

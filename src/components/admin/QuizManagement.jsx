@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { ClipboardList, Plus, Trash2, Eye, X, BarChart3, BookOpen, CheckCircle2, Circle } from 'lucide-react';
 import { getQuizzes, addQuiz, deleteQuiz, getQuizResults, getStudents } from '../../utils/storage';
+import { useToast } from '../../context/ToastContext';
+import ConfirmDialog from '../shared/ConfirmDialog';
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
 
@@ -10,10 +12,11 @@ export default function QuizManagement() {
   const [title, setTitle] = useState('');
   const [subject, setSubject] = useState('');
   const [questions, setQuestions] = useState([{ question: '', options: ['', '', '', ''], correct: 0 }]);
-  const [success, setSuccess] = useState('');
   const [viewQuiz, setViewQuiz] = useState(null);
   const [results, setResults] = useState([]);
   const [students, setStudents] = useState([]);
+  const [confirm, setConfirm] = useState({ open: false, id: null, title: '' });
+  const toast = useToast();
 
   const load = () => { setQuizzes(getQuizzes()); setResults(getQuizResults()); setStudents(getStudents()); };
   useEffect(load, []);
@@ -32,19 +35,23 @@ export default function QuizManagement() {
     e.preventDefault();
     if (!title || !subject) return;
     for (const q of questions) {
-      if (!q.question.trim()) { alert('All questions must have text.'); return; }
-      if (q.options.some(o => !o.trim())) { alert('All options must be filled.'); return; }
+      if (!q.question.trim()) { toast('All questions must have text.', 'error'); return; }
+      if (q.options.some(o => !o.trim())) { toast('All options must be filled.', 'error'); return; }
     }
     addQuiz({ title, subject, questions });
-    setSuccess('Quiz created successfully!');
     setTitle(''); setSubject('');
     setQuestions([{ question: '', options: ['', '', '', ''], correct: 0 }]);
     setTab('list'); load();
-    setTimeout(() => setSuccess(''), 3000);
+    toast('Quiz published successfully!', 'success');
   };
 
-  const handleDelete = (id, t) => {
-    if (window.confirm(`Delete quiz "${t}"?`)) { deleteQuiz(id); load(); }
+  const handleDelete = (id, t) => setConfirm({ open: true, id, title: t });
+
+  const doDelete = () => {
+    deleteQuiz(confirm.id);
+    load();
+    toast(`Quiz "${confirm.title}" deleted.`, 'success');
+    setConfirm({ open: false, id: null, title: '' });
   };
 
   return (
@@ -54,7 +61,14 @@ export default function QuizManagement() {
         <p>Create and manage subject-wise quizzes for students.</p>
       </div>
 
-      {success && <div className="alert alert-success">{success}</div>}
+      <ConfirmDialog
+        open={confirm.open}
+        title="Delete Quiz?"
+        message={`Are you sure you want to delete "${confirm.title}"? All student results for this quiz will also be lost.`}
+        confirmLabel="Yes, Delete"
+        onConfirm={doDelete}
+        onCancel={() => setConfirm({ open: false, id: null, title: '' })}
+      />
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
         <button className={`btn ${tab === 'list' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setTab('list')}>
