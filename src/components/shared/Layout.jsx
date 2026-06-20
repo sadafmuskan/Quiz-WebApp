@@ -42,8 +42,11 @@ export default function Layout() {
     if (user?.role === 'student') {
       const refresh = () => setUnread(getUnreadNotifCount(user.id));
       refresh();
-      const id = setInterval(refresh, 10000);
-      return () => clearInterval(id);
+      // Poll every 5 seconds as fallback (same-tab updates)
+      const id = setInterval(refresh, 5000);
+      // Fire instantly on cross-tab localStorage changes (admin assigns homework)
+      window.addEventListener('storage', refresh);
+      return () => { clearInterval(id); window.removeEventListener('storage', refresh); };
     }
   }, [user]);
 

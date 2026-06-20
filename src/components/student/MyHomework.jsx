@@ -13,8 +13,18 @@ export default function MyHomework() {
   const [filter,   setFilter] = useState('All');
   const toast = useToast();
 
-  const load = () => setList(getHomework());
-  useEffect(load, []);
+  const load = () => {
+    const all = getHomework();
+    // Show only homework targeted to this student's class + subject
+    setList(all.filter(hw => hw.class === user.class && hw.subject === user.subject));
+  };
+
+  useEffect(() => {
+    load();
+    // Refresh immediately when admin assigns homework from another tab
+    window.addEventListener('storage', load);
+    return () => window.removeEventListener('storage', load);
+  }, []);
 
   const handleToggle = (hw) => {
     toggleHomeworkDone(hw.id, user.id);

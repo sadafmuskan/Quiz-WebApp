@@ -4,7 +4,10 @@ import { getStudents, addStudent, deleteStudent } from '../../utils/storage';
 import { useToast } from '../../context/ToastContext';
 import ConfirmDialog from '../shared/ConfirmDialog';
 
-const emptyForm = { name: '', username: '', password: '', email: '', phone: '', subject: '' };
+const CLASSES  = ['Nursery','LKG','UKG','Class 1','Class 2','Class 3','Class 4','Class 5','Class 6','Class 7','Class 8','Class 9','Class 10'];
+const SUBJECTS = ['English','Hindi','Mathematics','Science','Social Science','EVS','Computer','Sanskrit','General Knowledge','Art & Craft','Physical Education','Moral Science'];
+
+const emptyForm = { name: '', username: '', password: '', email: '', phone: '', class: '', subject: '' };
 
 export default function StudentManagement() {
   const [students, setStudents] = useState([]);
@@ -42,7 +45,8 @@ export default function StudentManagement() {
   const filtered = students.filter(s =>
     s.name.toLowerCase().includes(search.toLowerCase()) ||
     s.username.toLowerCase().includes(search.toLowerCase()) ||
-    (s.subject || '').toLowerCase().includes(search.toLowerCase())
+    (s.subject || '').toLowerCase().includes(search.toLowerCase()) ||
+    (s.class || '').toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -84,7 +88,7 @@ export default function StudentManagement() {
             <table>
               <thead>
                 <tr>
-                  <th>#</th><th>Name</th><th>Username</th><th>Email</th><th>Phone</th><th>Subject</th><th>Actions</th>
+                  <th>#</th><th>Name</th><th>Username</th><th>Email</th><th>Phone</th><th>Class</th><th>Subject</th><th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -95,6 +99,7 @@ export default function StudentManagement() {
                     <td><span className="badge badge-info">{s.username}</span></td>
                     <td>{s.email || '—'}</td>
                     <td>{s.phone || '—'}</td>
+                    <td>{s.class ? <span className="badge badge-class">{s.class}</span> : '—'}</td>
                     <td>{s.subject ? <span className="badge badge-purple">{s.subject}</span> : '—'}</td>
                     <td>
                       <button className="btn btn-danger btn-sm" onClick={() => handleDelete(s.id, s.name)}>
@@ -151,22 +156,36 @@ export default function StudentManagement() {
                     onChange={e => setForm({ ...form, password: e.target.value })} required />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Subject</label>
-                  <input className="form-control" placeholder="e.g. Mathematics" value={form.subject}
-                    onChange={e => setForm({ ...form, subject: e.target.value })} />
+                  <label className="form-label">Class</label>
+                  <select className="form-control" value={form.class}
+                    onChange={e => setForm({ ...form, class: e.target.value })}>
+                    <option value="">— Select Class —</option>
+                    {CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
                 </div>
               </div>
               <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">Subject</label>
+                  <select className="form-control" value={form.subject}
+                    onChange={e => setForm({ ...form, subject: e.target.value })}>
+                    <option value="">— Select Subject —</option>
+                    {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
                 <div className="form-group">
                   <label className="form-label">Email</label>
                   <input className="form-control" type="email" placeholder="email@example.com" value={form.email}
                     onChange={e => setForm({ ...form, email: e.target.value })} />
                 </div>
+              </div>
+              <div className="form-row">
                 <div className="form-group">
                   <label className="form-label">Phone</label>
                   <input className="form-control" placeholder="+91 XXXXX XXXXX" value={form.phone}
                     onChange={e => setForm({ ...form, phone: e.target.value })} />
                 </div>
+                <div className="form-group" />
               </div>
               <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
                 <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>

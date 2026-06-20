@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import {
   Banknote, CalendarCheck, BookOpen, Trophy, TrendingUp,
   User, Mail, Phone, Tag, AtSign, AlertTriangle, CheckCircle2,
-  ChevronLeft, ChevronRight, BarChart3,
+  ChevronLeft, ChevronRight, BarChart3, GraduationCap,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getStudentFees, getStudentAttendance, getQuizzes, getStudentResults } from '../../utils/storage';
@@ -316,6 +316,12 @@ export default function StudentDashboard() {
             <div className="profile-field">
               <div className="profile-label"><Mail size={12} strokeWidth={2} /> Email</div>
               <div className="profile-value">{user.email}</div>
+            </div>
+          )}
+          {user?.class && (
+            <div className="profile-field">
+              <div className="profile-label"><GraduationCap size={12} strokeWidth={2} /> Class</div>
+              <div className="profile-value"><span className="badge badge-class">{user.class}</span></div>
             </div>
           )}
           {user?.subject && (
